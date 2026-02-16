@@ -1,0 +1,211 @@
+openapi: 3.1.0
+info:
+  title: Devices service API
+  description: API Devices service для управления домами, комнатами, устройствами
+  version: 1.0.0
+servers:
+  - url: http://devices-service:8082
+    description: Внутренний адрес сервиса devices-service
+paths:
+  /api/v1/rooms/{roomId}/install-module:
+    post:
+      summary: Подключить модуль умного дома в комнату
+      description: >
+        Создает устройства в указанной комнате на основе состава выбранного модуля.
+        Для устройств отопления дополнительно регистрирует устройство в монолите.
+      tags: [Modules]
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          description: Идентификатор комнаты, куда устанавливается модуль
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        description: Параметры подключения модуля
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InstallModuleRequest'
+            example:
+              moduleId: "019ac184-2a1f-7447-9b88-5c6dd720c761"
+      responses:
+        '201':
+          description: Модуль установлен, устройства созданы
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+              example:
+                - id: "019ac184-ae4a-751f-93cd-60cd44fd75a9"
+                  name: "Датчик температуры (кухня)"
+                  roomId: "019ac184-fa9d-73b7-ba90-6866ae6f813b"
+                  modelId: "019ac185-5e7e-78c8-9994-1c696ace9126"
+                  status: "active"
+                - id: "019ac185-bdb8-78ff-9612-4a2e3b135d99"
+                  name: "Реле отопления (кухня)"
+                  roomId: "019ac185-ed17-7b59-82a1-1e11173bff6a"
+                  modelId: "019ac186-1224-7712-afa4-9315f6dda443"
+                  status: "active"
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Комната или модуль не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/houses/{houseId}:
+    patch:
+      summary: Частично обновить дом
+      description: Позволяет изменить свойства дома, например название или адрес
+      tags: [Houses]
+      parameters:
+        - name: houseId
+          in: path
+          required: true
+          description: Идентификатор дома
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        description: Поля дома для обновления (все поля опциональны)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHouseRequest'
+            example:
+              name: "Загородный дом"
+              address: "Тульская область, деревня Сосны, д. 3"
+      responses:
+        '200':
+          description: Дом успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/House'
+        '400':
+          description: Неверный формат запроса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Дом не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/devices/{deviceId}:
+    delete:
+      summary: Удалить устройство
+      description: >
+        Удаляет устройство из системы. Для отопительных устройств перед удалением
+        может быть выполнена дополнительная логика по синхронизации с монолитом.
+      tags: [Devices]
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          description: Идентификатор устройства
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Устройство успешно удалено
+        '404':
+          description: Устройство не найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    InstallModuleRequest:
+      type: object
+      required: [moduleId]
+      properties:
+        moduleId:
+          type: string
+          format: uuid
+          description: Идентификатор модуля, который нужно установить в комнату
+    House:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        address:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    UpdateHouseRequest:
+      type: object
+      description: Поля дома для частичного обновления. Все поля опциональны.
+      properties:
+        name:
+          type: string
+          description: Новое имя дома
+        address:
+          type: string
+          description: Новый адрес дома
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        roomId:
+          type: string
+          format: uuid
+        modelId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          description: Текущее состояние устройства (active, inactive, failed)
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Машиночитаемый код ошибки
+        message:
+          type: string
+          description: Человекочитаемое описание ошибки

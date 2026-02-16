@@ -1,0 +1,103 @@
+@startuml
+title ER — Логическая модель данных (MVP)
+
+entity "houses\n(Devices DB)" as houses {
+  * id : uuid <<PK>>
+  --
+  name       : varchar(100)
+  address    : text
+  created_at : timestamptz
+}
+
+entity "rooms\n(Devices DB)" as rooms {
+  * id : uuid <<PK>>
+  --
+  house_id   : uuid
+  name       : varchar(100)
+  created_at : timestamptz
+}
+
+entity "modules\n(Devices DB)" as modules {
+  * id : uuid <<PK>>
+  --
+  name        : varchar(100)
+  description : text
+}
+
+entity "device_models\n(Devices DB)" as device_models {
+  * id : uuid <<PK>>
+  --
+  name        : varchar(100)
+  type_id     : uuid
+  description : text
+}
+
+entity "device_type\n(Devices DB)" as device_types {
+  * id : uuid <<PK>>
+  --
+  name : varchar(50)
+}
+
+entity "module_device_models\n(Devices DB)" as module_device_models {
+  * module_id       : uuid
+  * device_model_id : uuid
+  --
+  quantity : integer
+}
+
+entity "devices\n(Devices DB)" as devices {
+  * id : uuid <<PK>>
+  --
+  room_id            : uuid
+  model_id           : uuid
+  name               : varchar(100)
+  status             : varchar(20)
+  sensor_external_id : integer
+  created_at         : timestamptz
+}
+
+entity "sensors\n(Monolith DB)" as sensors {
+  * id : int <<PK>>
+  --
+  name         : varchar(100)
+  type         : varchar(50)
+  location     : varchar(100)
+  value        : float
+  unit         : varchar(20)
+  status       : varchar(20)
+  last_updated : timestamptz
+  created_at   : timestamptz
+}
+
+entity "temperature_telemetry\n(Telemetry DB)" as temperature_timeseries {
+  * device_id : string "Не uuid, так как телеметрия будет собираться
+  и со старых устройств, имеющих числовые идентификаторы"
+  * timestamp : DateTime64
+  --
+  value       : float "В MVP единицей измерения для температуры
+  во всей системе является градус Цельсия"
+}
+
+entity "temperature_last\n(Telemetry DB Materialized View)" as temperature_last_mv {
+  * device_id : string <<PK>>
+  --
+  value       : float
+  updated_at  : DateTime64
+}
+
+houses ||--o{ rooms : 1 дом — много комнат
+rooms ||--o{ devices : 1 комната — много устройств
+
+modules ||--o{ module_device_models : типы устройств в модуле
+device_models ||--o{ module_device_models : тип устройства в модуле
+device_models ||--o{ devices : тип устройства
+device_types ||--o{ device_models : тип устройства
+
+devices ||..-o{ temperature_timeseries : 1 датчик — много измерений
+devices ||..|| temperature_last_mv : 1 датчик — последнее измерение
+
+devices }o..|| sensors : "логическая связь по sensor_external_id = sensors.id"
+
+temperature_timeseries ..-> temperature_last_mv : Обновление представления
+
+@enduml

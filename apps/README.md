@@ -23,7 +23,7 @@ This script will:
 Alternatively, you can run Docker Compose directly:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 The API will be available at http://localhost:8080
@@ -35,7 +35,7 @@ If you prefer to run the application without Docker:
 1. Start the PostgreSQL database:
 
 ```bash
-docker-compose up -d postgres
+docker compose up -d postgres
 ```
 
 2. Build and run the application:
@@ -54,7 +54,7 @@ A Postman collection is provided for testing the API. Import the `smarthome-api.
 - `GET /health` - Health check
 - `GET /api/v1/sensors` - Get all sensors
 - `GET /api/v1/sensors/:id` - Get a specific sensor
-- `POST /api/v1/sensors` - Create a new sensor
+- `POST /api/v1/sensors` - Create Sensor
 - `PUT /api/v1/sensors/:id` - Update a sensor
 - `DELETE /api/v1/sensors/:id` - Delete a sensor
 - `PATCH /api/v1/sensors/:id/value` - Update a sensor's value and status

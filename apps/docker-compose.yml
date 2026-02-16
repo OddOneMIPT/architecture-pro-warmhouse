@@ -1,19 +1,156 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: smarthome-postgres
-  ## тут нужно добавить настройки
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./smart_home/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - smarthome-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+
+  kafka:
+    image: apache/kafka:4.1.0
+    networks:
+      - smarthome-network
+    environment:
+      KAFKA_NODE_ID: 1
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1 || exit 1"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
 
   temperature-api:
-  ## тут нужно добавить приложение
+    build: ./temperature-api
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC: telemetry.temperature.v1
+    networks:
+      - smarthome-network
+    depends_on:
+      - kafka
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8081/health || exit 1" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
 
-  app:
+  devices-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: devices
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - devices_postgres_data:/var/lib/postgresql/data
+      - ./devices/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - smarthome-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  devices-service:
+    build:
+      context: ./devices
+      dockerfile: Dockerfile
+    depends_on:
+      devices-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://devices-postgres:5432/devices
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SERVER_PORT: 8082
+    ports:
+      - "8082:8082"
+    networks:
+      - smarthome-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health || exit 1"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  telemetry-clickhouse:
+    image: clickhouse/clickhouse-server:25.11-alpine
+    container_name: telemetry-clickhouse
+    environment:
+      CLICKHOUSE_DB: telemetry
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    volumes:
+      - telemetry_clickhouse_data:/var/lib/clickhouse
+      - ./telemetry/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - smarthome-network
+    healthcheck:
+      test: [ "CMD-SHELL", "clickhouse-client --query 'SELECT 1' || exit 1" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  telemetry-service:
+    build:
+      context: ./telemetry
+      dockerfile: Dockerfile
+    environment:
+      TELEMETRY_DB_URL: jdbc:clickhouse://telemetry-clickhouse:8123/telemetry
+      TELEMETRY_DB_USER: default
+      TELEMETRY_DB_PASSWORD: ""
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_TOPIC: telemetry.temperature.v1
+      KAFKA_GROUP_ID: telemetry-service
+      TELEMETRY_HTTP_PORT: 8083
+    depends_on:
+      telemetry-clickhouse:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    networks:
+      - smarthome-network
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:8083/health || exit 1" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  smarthome-app:
     build:
       context: ./smart_home
       dockerfile: Dockerfile
-    container_name: smarthome-app
     depends_on:
       postgres:
         condition: service_healthy
@@ -27,9 +164,16 @@ services:
     restart: unless-stopped
     networks:
       - smarthome-network
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1" ]
+      interval: 2s
+      timeout: 2s
+      retries: 10
 
 volumes:
   postgres_data:
+  devices_postgres_data:
+  telemetry_clickhouse_data:
 
 networks:
   smarthome-network:

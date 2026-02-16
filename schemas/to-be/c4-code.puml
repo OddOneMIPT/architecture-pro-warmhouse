@@ -1,0 +1,38 @@
+@startuml
+title Последовательность: создание отопительного устройства
+
+actor User
+participant DevicesApiController
+participant DeviceCommandService
+participant DeviceModelsRepository
+participant DeviceRepository
+participant MonolithClient
+participant Monolith
+database DevicesDB
+
+User -> DevicesApiController: HTTP POST /devices {device payload}
+DevicesApiController -> DeviceCommandService: createDevice(command)
+DeviceCommandService -> DeviceModelsRepository: findDeviceModel(command.deviceModelId)
+DeviceModelsRepository -> DevicesDB: SELECT device_types WHERE id = ?
+DevicesDB --> DeviceModelsRepository: Тип устройства
+DeviceModelsRepository --> DeviceCommandService: DeviceModel
+
+DeviceCommandService -> DeviceRepository: saveNewDevice(command, deviceModel)
+DeviceRepository -> DevicesDB: INSERT INTO devices(...)
+DevicesDB --> DeviceRepository: OK
+DeviceRepository --> DeviceCommandService: Device(id, ..., deviceModel)
+
+alt устройство отопления (тип Heating relay)
+  DeviceCommandService -> MonolithClient: registerHeatingDevice(Device)
+  MonolithClient -> Monolith: HTTP POST /devices (информация об устройстве)
+  Monolith --> MonolithClient: HTTP 201 {externalSensorId}
+  MonolithClient --> DeviceCommandService: externalSensorId
+  DeviceCommandService -> DeviceRepository: updateSensorExternalId(Device.id, externalSensorId)
+  DeviceRepository -> DevicesDB: UPDATE devices SET sensor_external_id = externalSensorId WHERE id = Device.id
+  DevicesDB --> DeviceRepository: OK
+end
+
+DeviceCommandService --> DevicesApiController: DeviceDto
+DevicesApiController --> User: HTTP 201 JSON {device}
+
+@enduml

@@ -1,0 +1,34 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C4 — Components Telemetry service
+
+Container_Ext(deviceService, "Devices service", "Kotlin (Ktor)", "Вызывает API сервиса телеметрии, чтобы получить температуру")
+Container_Ext(kafka, "Kafka", "Очередь сообщений", "Содержит события с показаниями датчиков")
+
+Container_Boundary(telemetryService, "Telemetry service (Java + Spring Boot)") {
+  Component(telemetryController, "TelemetryController", "", "Обрабатывает HTTP‑запросы от Devices service, валидирует параметры, возвращает данные о температуре")
+  Component(kafkaListener, "KafkaTelemetryListener", "", "Подписан на топик телеметрии, получает сообщения из Kafka и передаёт их в сервис записи")
+
+  Component(queryService, "TelemetryQueryService", "", "Бизнес‑логика получения данных о последних измерениях температуры")
+  Component(writeService, "TelemetryWriteService", "", "Обрабатывает новые показания датчиков: записывает их в историю измерений")
+
+  Component(temperatureRepository, "TemperatureRepository", "", "Запись в таблицу истории температуры")
+  Component(lastValueRepository, "LastValueRepository", "", "Чтение последних значений по комнате/датчику")
+}
+
+ContainerDb_Ext(telemetryDb, "Telemetry DB", "ClickHouse", "Хранит историю показаний и поддерживает представление последних показаний")
+
+
+Rel(deviceService, telemetryController, "Запрашивает данные о температуре", "HTTP/JSON")
+Rel(kafka, kafkaListener, "Доставляет сообщения с измерениями", "Сообщения")
+
+Rel(kafkaListener, writeService, "Передаёт новые показания датчиков")
+Rel(telemetryController, queryService, "Запрашивает данные о последних показаниях температуры датчика или в помещении")
+
+Rel(writeService, temperatureRepository, "Записывает новые измерения")
+Rel(queryService, lastValueRepository, "Читает последние значения")
+
+Rel(temperatureRepository, telemetryDb, "Записывает новые измерения", "SQL")
+Rel(lastValueRepository, telemetryDb, "Читает последние значения", "SQL")
+
+@enduml

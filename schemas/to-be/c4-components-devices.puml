@@ -1,0 +1,50 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C4 — Components Devices Service (Kotlin + Ktor)
+
+Container_Ext(telemetryService, "Telemetry service", "Java (Spring Boot)", "Предоставляет данные о температуре датчиков и помещений по запросу")
+Container_Ext(monolith, "Smart home (монолит)", "Go", "Принимает команды управления отоплением и регистрирует устройства отопления")
+ContainerDb_Ext(devicesDb, "Devices DB", "PostgreSQL", "Хранит дома, комнаты, устройства, модули и модели устройств")
+
+Container_Boundary(devicesService, "Devices service (Kotlin + Ktor)") {
+  Component(deviceApiController, "DevicesApiController", "", "Принимает запросы пользователей: управление домами, комнатами, устройствами и модулями, запрос текущей температуры")
+  Component(deviceCommandService, "DeviceCommandService", "", "Обрабатывает команды пользователя: добавляет, обновляет и удаляет дома, комнаты, устройства и модули; при необходимости регистрирует устройства отопления в монолите")
+  Component(deviceQueryService, "DeviceQueryService", "", "Собирает данные для чтения: возвращает дома, комнаты, устройства и их текущую температуру")
+
+  Component(houseRepository, "HouseRepository", "", "Работает с таблицей домов")
+  Component(roomRepository, "RoomRepository", "", "Работает с таблицей комнат")
+  Component(deviceRepository, "DeviceRepository", "", "Работает с таблицей устройств")
+  Component(moduleRepository, "ModuleRepository", "", "Работает с таблицей модулей умного дома")
+  Component(deviceModelsRepository, "DeviceModelsRepository", "", "Работает с таблицей моделей устройств")
+
+  Component(telemetryClient, "TelemetryClient", "", "Вызывает API Telemetry service для получения температуры по датчикам и помещениям")
+  Component(monolithClient, "MonolithClient", "", "Вызывает API монолита для регистрации и обновления устройств отопления")
+}
+
+Rel(deviceApiController, deviceCommandService, "Передаёт команды на изменение домов, комнат, устройств и модулей", "")
+Rel(deviceApiController, deviceQueryService, "Запрашивает данные для ответов пользователю", "")
+
+Rel(deviceCommandService, houseRepository, "Сохраняет и удаляет данные домов", "")
+Rel(deviceCommandService, roomRepository, "Сохраняет и удаляет данные комнат", "")
+Rel(deviceCommandService, deviceRepository, "Сохраняет и удаляет данные устройств", "")
+Rel(deviceCommandService, moduleRepository, "Сохраняет и удаляет данные модулей", "")
+Rel(deviceCommandService, deviceModelsRepository, "Читает данные моделей устройств", "")
+Rel(deviceCommandService, monolithClient, "Регистрирует, обновляет и удаляет устройства отопления в монолите", "")
+
+Rel(deviceQueryService, houseRepository, "Читает данные домов", "")
+Rel(deviceQueryService, roomRepository, "Читает данные комнат", "")
+Rel(deviceQueryService, deviceRepository, "Читает данные устройств", "")
+Rel(deviceQueryService, moduleRepository, "Читает данные модулей", "")
+Rel(deviceQueryService, deviceModelsRepository, "Читает данные моделей устройств", "")
+Rel(deviceQueryService, telemetryClient, "Получает текущую температуру датчиков и помещений", "")
+
+Rel(houseRepository, devicesDb, "Читает и записывает данные домов", "SQL")
+Rel(roomRepository, devicesDb, "Читает и записывает данные комнат", "SQL")
+Rel(deviceRepository, devicesDb, "Читает и записывает данные устройств", "SQL")
+Rel(moduleRepository, devicesDb, "Читает и записывает данные модулей", "SQL")
+Rel(deviceModelsRepository, devicesDb, "Читает и записывает данные моделей устройств", "SQL")
+
+Rel(telemetryClient, telemetryService, "Вызывает HTTP‑эндпоинты для получения температуры", "HTTP/JSON")
+Rel(monolithClient, monolith, "Вызывает HTTP‑эндпоинты для регистрации и обновления устройств отопления", "HTTP/JSON")
+
+@enduml
