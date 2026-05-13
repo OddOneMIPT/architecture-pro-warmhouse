@@ -1,0 +1,19 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+title «Тёплый дом» — As‑Is
+
+Person(user, "Домовладелец", "Через веб‑интерфейс включает/выключает отопление, смотрит температуру")
+Person(installer, "Инженер‑установщик", "Подключает датчики и реле на выезде")
+
+System(system, "Система «Тёплый дом»")
+
+System_Ext(sensor, "Датчик температуры", "Устройство в доме")
+System_Ext(relay,  "Устройство управления отоплением", "Устройство в доме")
+
+Rel(user, system, "Веб‑интерфейс")
+Rel(installer, system, "Регистрация/привязка устройств")
+
+Rel(system, sensor, "Запрос текущей температуры")
+Rel(system, relay,  "Команды включения/выключения отопления")
+
+@enduml

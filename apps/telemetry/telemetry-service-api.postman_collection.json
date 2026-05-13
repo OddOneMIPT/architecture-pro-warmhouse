@@ -1,0 +1,90 @@
+{
+	"info": {
+		"_postman_id": "54458354-26fb-4ac4-bf55-67038f69cba4",
+		"name": "Telemetry service API",
+		"description": "Коллекция для тестирования Ktor-сервиса телеметрии (health и текущая температура устройства).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "50109548",
+		"_collection_link": "https://redayni-4332491.postman.co/workspace/%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9's-Workspace~da9968e5-afa8-470c-8b34-58bd76060c27/collection/50109548-54458354-26fb-4ac4-bf55-67038f69cba4?action=share&source=collection_link&creator=50109548"
+	},
+	"item": [
+		{
+			"name": "Health check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get current temperature by deviceId",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/api/v1/devices/{{device_id}}/temperature/current",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"devices",
+						"{{device_id}}",
+						"temperature",
+						"current"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8083"
+		},
+		{
+			"key": "device_id",
+			"value": "019ac18c-4080-7e9b-9c55-5a1af15ade3c"
+		}
+	]
+}

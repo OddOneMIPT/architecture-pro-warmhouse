@@ -1,0 +1,51 @@
+asyncapi: 2.6.0
+info:
+  title: Telemetry Events
+  version: 1.0.0
+  description: События с показаниями температуры от устройств для Telemetry service.
+defaultContentType: application/json
+servers:
+  local-kafka:
+    url: kafka:9092
+    protocol: kafka
+    description: Локальный брокер Kafka для среды разработки
+channels:
+  telemetry.temperature.v1:
+    description: Поток показаний температуры от устройств
+    subscribe:
+      summary: Telemetry service читает показания температуры
+      message:
+        $ref: '#/components/messages/Telemetry'
+    publish:
+      summary: Temperature service публикует показания температуры
+      message:
+        $ref: '#/components/messages/Telemetry'
+
+components:
+  messages:
+    Telemetry:
+      name: TelemetryReading
+      title: Показание температуры устройства
+      payload:
+        type: object
+        required:
+          - eventId
+          - deviceId
+          - value
+          - occurredAt
+        properties:
+          eventId:
+            type: string
+            format: uuid
+            description: Идентификатор события
+          deviceId:
+            type: string
+            description: Идентификатор устройства, к которому относится измерение
+          value:
+            type: integer
+            format: int64
+            description: Измеренное значение температуры
+          occurredAt:
+            type: string
+            format: date-time
+            description: Время измерения на стороне устройства или сервиса

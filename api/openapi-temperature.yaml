@@ -1,0 +1,36 @@
+openapi: 3.1.0
+info:
+  title: Temperature API (emulator)
+  version: 1.0.0
+paths:
+  /temperature:
+    get:
+      summary: Получить случайное значение температуры по комнате или сенсору
+      parameters:
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Название помещения (например, Living Room)
+        - name: sensorId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Идентификатор сенсора
+      responses:
+        '200':
+          description: Случайное значение температуры
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sensorId:
+                    type: string
+                  location:
+                    type: string
+                  temperature:
+                    type: number
+                    format: float

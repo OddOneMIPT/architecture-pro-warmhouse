@@ -1,0 +1,67 @@
+openapi: 3.1.0
+info:
+  title: Telemetry service API
+  version: 1.0.0
+  description: API сервиса телеметрии для получения текущих значений температуры по устройствам
+servers:
+  - url: http://telemetry-service:8080
+    description: Внутренний адрес сервиса телеметрии
+paths:
+  /api/v1/devices/{deviceId}/temperature/current:
+    get:
+      summary: Получить текущую температуру по устройству
+      description: Возвращает последнее известное значение температуры для указанного устройства
+      tags: [Temperature]
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          description: Идентификатор устройства
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Текущее значение температуры найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentTemperature'
+              example:
+                deviceId: "019ac18c-4080-7e9b-9c55-5a1af15ade3c"
+                value: 21.7
+                updatedAt: "2025-11-24T10:15:30Z"
+        '404':
+          description: Данные о температуре для этого устройства не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    CurrentTemperature:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          format: uuid
+        value:
+          type: number
+          format: float
+        updatedAt:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string

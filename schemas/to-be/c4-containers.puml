@@ -1,0 +1,37 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+title C4 — Container (MVP: устройства и телеметрия)
+
+Person(user, "Пользователь", "Веб/мобильный клиент")
+
+System_Boundary(system, "Платформа «Теплый дом» (MVP)") {
+
+  Container(deviceService, "Devices service", "Kotlin (Ktor)", "Сервис просмотра комнат, устройств и их текущего состояния (температура)")
+  ContainerDb(deviceDb, "Devices DB", "PostgreSQL", "База данных устройств, модулей и помещений")
+  Container(monolith, "Smart home (монолит)", "Go", "Существующее монолитное приложение")
+
+  Container(temperatureService, "Temperature service", "Python (FastAPI)", "Временный эмулятор сервиса приема температуры от датчиков: по запросу отдаёт случайную температуру и отправляет её в очередь")
+  Container(telemetryService, "Telemetry service", "Java (Spring Boot)", "Сервис работы с показаниями датчиков: принимает новые измерения, хранит историю и отдаёт значения по запросу")
+  ContainerDb(monolithDb, "Monolith DB", "PostgreSQL", "База данных монолита")
+
+  ContainerDb(telemetryDb, "Telemetry DB", "ClickHouse", "История показаний датчиков и последние известные значения")
+  ContainerQueue(kafka, "Kafka", "Очередь сообщений", "Топик для передачи показаний температуры датчиков")
+}
+
+
+Rel(user, deviceService, "Просматривает устройства и температуру в комнатах", "HTTPS")
+Rel(user, deviceService, "Регистрирует устройства в системе", "HTTPS")
+Rel(user, monolith, "Управляет отоплением", "HTTPS")
+
+Rel(deviceService, telemetryService, "Запрашивает текущую температуру по комнатам/датчикам", "HTTP")
+Rel(deviceService, deviceDb, "Читает и записывает данные сервиса устройств", "SQL")
+Rel(deviceService, monolith, "Добавляет, обновляет и удаляет устройства отопления", "HTTP")
+
+Rel(monolith, temperatureService, "Запрашивает температуру для своей логики", "HTTP")
+Rel(monolith, monolithDb, "Читает и записывает данные монолита", "SQL")
+
+Rel(temperatureService, kafka, "Отправляет показания температуры", "Сообщения")
+Rel(telemetryService, kafka, "Получает показания температуры", "Сообщения")
+Rel(telemetryService, telemetryDb, "Записывает и читает историю показаний", "SQL")
+
+@enduml

@@ -1,0 +1,203 @@
+{
+	"info": {
+		"_postman_id": "c5f99b1b-b4ac-41d0-94a2-2eea1479dc6b",
+		"name": "Devices Service API",
+		"description": "Коллекция для тестирования devices-service с начальными данными из init-devices.sql",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "50109548",
+		"_collection_link": "https://redayni-4332491.postman.co/workspace/%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9's-Workspace~da9968e5-afa8-470c-8b34-58bd76060c27/collection/50109548-c5f99b1b-b4ac-41d0-94a2-2eea1479dc6b?action=share&source=collection_link&creator=50109548"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Get houses",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Update house",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Городской дом (обновлен)\",\n  \"address\": \"Город, Центральная улица, дом 1\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/houses/{{houseId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"houses",
+						"{{houseId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Install basic heating module in Living Room",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"moduleId\": \"{{basicModuleId}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/rooms/{{roomId}}/install-module",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"rooms",
+						"{{roomId}}",
+						"install-module"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get devices by house",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/houses/{{houseId}}/devices",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"houses",
+						"{{houseId}}",
+						"devices"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update device",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Переименованное устройство\",\n  \"roomId\": \"{{roomId}}\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/devices/{{deviceId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"devices",
+						"{{deviceId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete device",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/devices/{{deviceId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"devices",
+						"{{deviceId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8082"
+		},
+		{
+			"key": "houseId",
+			"value": "d8e643fb-2bd6-47f3-8b69-e036cac9f2bb"
+		},
+		{
+			"key": "roomId",
+			"value": "98d83aa5-5f66-40c0-b070-391787e20760"
+		},
+		{
+			"key": "moduleId",
+			"value": "f605e3ee-d6b2-49bb-a752-a1ba44412e20"
+		},
+		{
+			"key": "deviceId",
+			"value": "ff88c097-39e1-47b1-afe1-8087bbbfcc16"
+		}
+	]
+}
